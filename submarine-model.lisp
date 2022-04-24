@@ -3,8 +3,9 @@
 
 (define-model submarine 
 
-(sgp :v t :esc t :egs 3.5 :show-focus t 
+(sgp :v t :esc t :egs 1 :show-focus t :trace-detail high
      :ul t :ult t 
+;;   :epl t :pct t
      :needs-mouse t :cursor-noise t)
 
 (chunk-type play-game state)
@@ -104,7 +105,7 @@
         state      read-denom
     =imaginal>
         isa        fraction
-      - numer      nil
+        numer      =numer
         denom      nil
     =visual>
         isa        text
@@ -143,30 +144,17 @@
         position   =posit
     =imaginal>
         isa        fraction
-      - numer      nil
-      - denom      nil
+        numer      =numer
+        denom      =denom
   ==>
     =goal>
         state      estimate
-    *imaginal>
-        position   =posit
-  )
-
-(p retrieval-failure
-    =goal>
-        isa        play-game
-        state      retrieved
-    ?retrieval>
-        buffer     failure
-    =imaginal>
-  ==>
-    =goal>
-        state      guess
     +visual-location>
         isa        visual-location
         kind       line
         color      blue
-    =imaginal>
+    *imaginal>
+        position   =posit
   )
 
 (p estimate-position
@@ -183,6 +171,23 @@
     =visual-location>
         isa        visual-location
         screen-x   =posit
+    =imaginal>
+  )
+
+(p retrieval-failure
+    =goal>
+        isa        play-game
+        state      retrieved
+    ?retrieval>
+        buffer     failure
+    =imaginal>
+  ==>
+    =goal>
+        state      guess
+    +visual-location>
+        isa        visual-location
+        kind       line
+        color      blue
     =imaginal>
   )
 
@@ -282,15 +287,13 @@
         isa        fraction
       - numer      nil
       - denom      nil
+    !bind!         =mid (/ (+ =right =left) 2)
   ==>
     =goal>
         state      end-choice
     *imaginal>
-        position   =left
+        position   =mid
   )
-
-;; !bind!     =mid (/ (+ =right =left) 2)
-;; position   =mid
 
 (p continue-game
     =goal>
@@ -298,7 +301,8 @@
         state      end-choice
     ?manual>
         state      free
-    =imaginal>
+    ?imaginal>
+        state      free
  ==>
     =goal>
         state      end-trial
@@ -314,7 +318,8 @@
         state      end-choice
     ?manual>
         state      free
-    =imaginal>
+    ?imaginal>
+        state      free
  ==>
     +manual>
         cmd        press-key
