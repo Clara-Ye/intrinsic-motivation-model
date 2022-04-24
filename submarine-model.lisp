@@ -3,9 +3,9 @@
 
 (define-model submarine 
 
-(sgp :v t :esc t :egs 1 :show-focus t :trace-detail high
+(sgp :v t :esc t :egs 1 :show-focus t :trace-detail low
      :ul t :ult t 
-;;   :epl t :pct t
+     :epl t :pct t
      :needs-mouse t :cursor-noise t)
 
 (chunk-type play-game state)
@@ -26,20 +26,36 @@
     =goal>
         isa        play-game
         state      find-numer
+    ?visual-location>
+        buffer     empty
   ==>
-    =goal>
-        state      attend-numer
     +visual-location>
         isa        visual-location
         kind       text
-        screen-y   lowest
+      < screen-y   510
   )
 
-(p attend-numerator
+(p cannot-find-numerator
     =goal>
         isa        play-game
-        state      attend-numer
+        state      find-numer
+    ?visual-location>
+        buffer     failure
+  ==>
+    +visual-location>
+        isa        visual-location
+        kind       text
+      < screen-y   510
+  )
+
+(p found-and-attend-numerator
+    =goal>
+        isa        play-game
+        state      find-numer
     =visual-location>
+        isa        visual-location
+        kind       text
+      < screen-y   510
     ?visual>
         state      free
   ==>
@@ -78,7 +94,7 @@
     +visual-location>
         isa        visual-location
         kind       text
-        screen-y   highest
+      > screen-y   520
     =imaginal>
   )
 
