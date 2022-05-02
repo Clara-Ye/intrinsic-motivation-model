@@ -3,9 +3,9 @@
 
 (define-model submarine 
 
-(sgp :v t :esc t :egs 1 :show-focus t :trace-detail low
+(sgp :v t :esc t :egs 1 :show-focus nil 
      :ul t :ult t 
-     :epl t :pct t
+     :epl nil :pct nil
      :needs-mouse t :cursor-noise t)
 
 (chunk-type play-game state)
@@ -13,14 +13,17 @@
 
 (define-chunks 
     (goal isa play-game state find-numer)
-    (find-numer) (attend-numer) (read-numer) 
+    (find-numer) (read-numer) 
     (find-denom) (attend-denom) (read-denom) 
     (retrieve) (retrieved) (estimate) (guess)
     (prepare-mouse) (move-mouse)
-    (find-sol) (attend-sol) (memorize-sol) 
+    (find-sol) (memorize-sol) 
     (end-choice) (end-trial)
 )
 
+(add-dm
+ (half isa fraction numer "1" denom "2" position 750))
+ 
 
 (p find-numerator
     =goal>
@@ -48,7 +51,7 @@
       < screen-y   510
   )
 
-(p found-and-attend-numerator
+(p attend-numerator
     =goal>
         isa        play-game
         state      find-numer
@@ -265,31 +268,65 @@
         state      find-sol
     =imaginal>
  ==>
-    =goal>
-        state      attend-sol
     +visual-location>
         isa        visual-location
         kind       line
-        color      red
+      - color      black
     =imaginal>
 )
 
-(p attend-target
+(p cannot-find-target
     =goal>
         isa        play-game
-        state      attend-sol
+        state      find-sol
+    ?visual-location>
+        buffer     failure
+  ==>
+    +visual-location>
+        isa        visual-location
+        kind       line
+      - color      black
+  )
+
+(p attend-target-correct
+    =goal>
+        isa        play-game
+        state      find-sol
     =imaginal>
     =visual-location>
+        isa        visual-location
+        kind       line
+        color      green
     ?visual>
         state      free
- ==>
+  ==>
     =goal>
         state      memorize-sol
     +visual>
         isa        move-attention
         screen-pos =visual-location
     =imaginal>
-)
+  )
+
+(p attend-target-incorrect
+    =goal>
+        isa        play-game
+        state      find-sol
+    =imaginal>
+    =visual-location>
+        isa        visual-location
+        kind       line
+        color      red
+    ?visual>
+        state      free
+  ==>
+    =goal>
+        state      memorize-sol
+    +visual>
+        isa        move-attention
+        screen-pos =visual-location
+    =imaginal>
+  )
 
 (p memorize-solution
     =goal>
@@ -357,6 +394,6 @@
 
 (spp continue-game :u 20)
 (spp end-game :u 0)
-(spp retrieval-success :reward 5)
-(spp recognize-end-trial :reward -5)
+(spp attend-target-correct :reward 5)
+(spp attend-target-incorrect :reward -1)
 )
