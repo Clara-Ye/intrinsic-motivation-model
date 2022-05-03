@@ -14,6 +14,10 @@ time_data = []
 #             (1,2),  (3,5),  (5,8),  (2,3),  (7,10),
 #             (3,4),  (4,5),  (5,6),  (7,8),  (9,10)]
 fractions = [(1,4), (1,2), (3,4)]
+repetitions = {(1,10):0,  (1,8):0,  (1,6):0,  (1,5):0,  (1,4): 0, 
+               (3,10):0,  (1,3):0,  (3,8):0,  (2,5):0,  (3,7): 0, 
+               (1,2): 0,  (3,5):0,  (5,8):0,  (2,3):0,  (7,10):0,
+               (3,4): 0,  (4,5):0,  (5,6):0,  (7,8):0,  (9,10):0}
 ship_sizes = [0.04, 0.06, 0.08, 0.10, 0.16, 0.20, 0.24, 0.30, 0.40]
 time_limits = [2, 3, 4, 5, 8, 10, 15, 30]
 click_loc = None
@@ -29,6 +33,11 @@ def respond_to_key_press(model, key):
 def respond_to_mouse_click(model, coord, finger):
     global click_loc
     click_loc = coord[0]
+
+def calculate_reward(numer, denom):
+    fraction = (numer, denom)
+    rep = repetitions[fraction]
+    return 4 - 2*rep
 
 def model(numer, denom, size, time):
     global current_numer, current_fracline, current_denom
@@ -47,6 +56,7 @@ def model(numer, denom, size, time):
         actr.add_command("attack", respond_to_mouse_click, 
                          "Submarine task attack mouse click")
         actr.monitor_command("click-mouse", "attack")
+        actr.start_hand_at_mouse()
 
         global click_loc
         click_loc = -1
@@ -65,19 +75,17 @@ def model(numer, denom, size, time):
         x_correct = 50 + (numer/denom)*(450-50)
         left_end = x_correct - width_correct/2
         right_end = x_correct + width_correct/2
-        click_loc_trans = 50 + (click_loc-550)/(950-550) * (450-50)
-        print(click_loc_trans, x_correct)
+        ship_line = actr.add_line_to_exp_window(window,
+                                                [left_end,145],
+                                                [right_end,145],
+                                                "red")
 
+        click_loc_trans = 50 + (click_loc-550)/(950-550) * (450-50)
+        print(click_loc, click_loc_trans, x_correct)
         if (left_end <= click_loc_trans) and (click_loc_trans <= right_end):
-            ship_line = actr.add_line_to_exp_window(window,
-                                                    [left_end,145],
-                                                    [right_end,145],
-                                                    "green")
+            actr.trigger_reward(calculate_reward(numer, denom))
         else:
-            ship_line = actr.add_line_to_exp_window(window,
-                                                    [left_end,145],
-                                                    [right_end,145],
-                                                    "red")
+            actr.trigger_reward(-1)
 
         # trial-end choice
         actr.add_command("end-response", respond_to_key_press, 
@@ -87,21 +95,21 @@ def model(numer, denom, size, time):
         global end_choice
         end_choice = ''
 
-        actr.run_full_time(5)
+        actr.run(3)
 
         actr.remove_command_monitor("output-key", "end-response")
         actr.remove_command("end-response")
 
-    return end_choice
-
 def run_trial(size, time):
-    global fractions, end_choice
-    numer, denom = random.choice(fractions)
-    end_choice = model(numer, denom, size, time)
+    global fractions, repetitions, end_choice
+    fraction = random.choice(fractions)
+    numer, denom = fraction
+    model(numer, denom, size, time)
+    repetitions[fraction] += 1
 
 def run_game(size, time):
+    global end_choice
     actr.reset()
-    actr.start_hand_at_mouse()
     n_trials = 0
     while end_choice != "e":
         run_trial(size, time)

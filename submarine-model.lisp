@@ -3,10 +3,11 @@
 
 (define-model submarine 
 
-(sgp :v t :esc t :egs 1 :show-focus nil 
+(sgp :v t :esc t :egs 1 :show-focus nil :trace-detail low
      :ul t :ult t 
      :epl nil :pct nil
-     :needs-mouse t :cursor-noise t)
+     :needs-mouse t :cursor-noise t
+     :default-target-width 40)
 
 (chunk-type play-game state)
 (chunk-type fraction numer denom position)
@@ -15,10 +16,9 @@
     (goal isa play-game state find-numer)
     (find-numer) (read-numer) 
     (find-denom) (attend-denom) (read-denom) 
-    (retrieve) (retrieved) (estimate) (guess)
+    (retrieve) (retrieved) (estimate)
     (prepare-mouse) (move-mouse)
-    (find-sol) (memorize-sol) 
-    (end-choice) (end-trial)
+    (find-sol) (memorize-sol) (end-choice)
 )
 
 (add-dm
@@ -154,6 +154,21 @@
     =imaginal>
   )
 
+(p retrieval-failure
+    =goal>
+        isa        play-game
+        state      retrieved
+    ?retrieval>
+        buffer     failure
+    =imaginal>
+  ==>
+    +retrieval>
+        isa        fraction
+        numer      "1"
+        denom      "2"
+    =imaginal>
+  )
+
 (p retrieval-success
     =goal>
         isa        play-game
@@ -193,52 +208,15 @@
     =imaginal>
   )
 
-(p retrieval-failure
-    =goal>
-        isa        play-game
-        state      retrieved
-    ?retrieval>
-        buffer     failure
-    =imaginal>
-  ==>
-    =goal>
-        state      guess
-    +visual-location>
-        isa        visual-location
-        kind       line
-        color      blue
-    =imaginal>
-  )
-
-(p guess-position
-    =goal>
-        isa        play-game
-        state      guess
-    =imaginal>
-    =visual-location>
-  ==>
-    =goal>
-        state      prepare-mouse
-    =visual-location>
-        isa        visual-location
-        screen-x   750
-    =imaginal>
-  )
-
 (p move-mouse
     =goal>
         isa        play-game
         state      prepare-mouse
     =imaginal>
     =visual-location>
-    ?visual>
-        state      free
     ?manual>
         state      free
   ==>
-    +visual>
-        isa        move-attention
-        screen-pos =visual-location
     =goal>
         state      move-mouse
     +manual>
@@ -271,44 +249,11 @@
     +visual-location>
         isa        visual-location
         kind       line
-      - color      black
+        color      red
     =imaginal>
 )
 
-(p cannot-find-target
-    =goal>
-        isa        play-game
-        state      find-sol
-    ?visual-location>
-        buffer     failure
-  ==>
-    +visual-location>
-        isa        visual-location
-        kind       line
-      - color      black
-  )
-
-(p attend-target-correct
-    =goal>
-        isa        play-game
-        state      find-sol
-    =imaginal>
-    =visual-location>
-        isa        visual-location
-        kind       line
-        color      green
-    ?visual>
-        state      free
-  ==>
-    =goal>
-        state      memorize-sol
-    +visual>
-        isa        move-attention
-        screen-pos =visual-location
-    =imaginal>
-  )
-
-(p attend-target-incorrect
+(p attend-target
     =goal>
         isa        play-game
         state      find-sol
@@ -358,7 +303,7 @@
         state      free
  ==>
     =goal>
-        state      end-trial
+        state      find-numer
     +manual>
         cmd        press-key
         key        "c"
@@ -380,20 +325,8 @@
     -imaginal>
   )
 
-(p recognize-end-trial
-    =goal>
-        isa        play-game
-        state      end-trial
- ==>
-    =goal>
-        state      find-numer
-  )
-
-
 (goal-focus goal)
 
 (spp continue-game :u 20)
 (spp end-game :u 0)
-(spp attend-target-correct :reward 5)
-(spp attend-target-incorrect :reward -1)
 )
