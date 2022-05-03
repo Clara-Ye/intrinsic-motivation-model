@@ -13,7 +13,7 @@ time_data = []
 #             (3,10), (1,3),  (3,8),  (2,5),  (3,7), 
 #             (1,2),  (3,5),  (5,8),  (2,3),  (7,10),
 #             (3,4),  (4,5),  (5,6),  (7,8),  (9,10)]
-fractions = [(1,4), (1,2), (3,4)]
+fractions = [(1,4), (1,3), (1,2), (2,3), (3,4)]
 repetitions = {(1,10):0,  (1,8):0,  (1,6):0,  (1,5):0,  (1,4): 0, 
                (3,10):0,  (1,3):0,  (3,8):0,  (2,5):0,  (3,7): 0, 
                (1,2): 0,  (3,5):0,  (5,8):0,  (2,3):0,  (7,10):0,
@@ -61,6 +61,7 @@ def model(numer, denom, size, time):
         global click_loc
         click_loc = -1
 
+        actr.set_buffer_chunk("goal", "first-goal")
         actr.run(time)
         actr.remove_items_from_exp_window(window,current_numer)
         actr.remove_items_from_exp_window(window,current_fracline)
@@ -95,7 +96,8 @@ def model(numer, denom, size, time):
         global end_choice
         end_choice = ''
 
-        actr.run(3)
+        actr.set_buffer_chunk("goal", "second-goal")
+        actr.run(5)
 
         actr.remove_command_monitor("output-key", "end-response")
         actr.remove_command("end-response")
@@ -110,6 +112,7 @@ def run_trial(size, time):
 def run_game(size, time):
     global end_choice
     actr.reset()
+    end_choice = False
     n_trials = 0
     while end_choice != "e":
         run_trial(size, time)

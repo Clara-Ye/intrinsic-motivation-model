@@ -4,46 +4,45 @@
 (define-model submarine 
 
 (sgp :v t :esc t :egs 1 :show-focus nil :trace-detail low
-     :ul t :ult t 
+     :ul t :ult nil
+     :mp 1.0 :rt -0.5 :act t
      :epl nil :pct nil
      :needs-mouse t :cursor-noise t
      :default-target-width 40)
 
 (chunk-type play-game state)
+(chunk-type integer string)
 (chunk-type fraction numer denom position)
 
 (define-chunks 
-    (goal isa play-game state find-numer)
-    (find-numer) (read-numer) 
-    (find-denom) (attend-denom) (read-denom) 
+    (first-goal isa play-game state find-numer)
+    (second-goal isa play-game state find-sol)
+    (find-numer) (read-numer) (encode-numer)
+    (find-denom) (read-denom) (encode-denom)
     (retrieve) (retrieved) (estimate)
     (prepare-mouse) (move-mouse)
-    (find-sol) (memorize-sol) (end-choice)
+    (find-sol) (memorize-sol) 
+    (end-choice) (wait) (quit)
 )
 
 (add-dm
- (half isa fraction numer "1" denom "2" position 750))
+    (one   isa integer  string "1")
+    (two   isa integer  string "2")
+    (three isa integer  string "3")
+    (four  isa integer  string "4")
+    (five  isa integer  string "5")
+    (six   isa integer  string "6")
+    (seven isa integer  string "7")
+    (eight isa integer  string "8")
+    (nine  isa integer  string "9")
+    (ten   isa integer  string "10")
+    (half  isa fraction  numer one  denom two  position 750))
  
 
 (p find-numerator
     =goal>
         isa        play-game
         state      find-numer
-    ?visual-location>
-        buffer     empty
-  ==>
-    +visual-location>
-        isa        visual-location
-        kind       text
-      < screen-y   510
-  )
-
-(p cannot-find-numerator
-    =goal>
-        isa        play-game
-        state      find-numer
-    ?visual-location>
-        buffer     failure
   ==>
     +visual-location>
         isa        visual-location
@@ -80,10 +79,25 @@
         state      free
   ==>
     =goal>
+        state      encode-numer
+    +retrieval>
+        isa        integer
+        string     =numer
+  )
+
+(p encode-numerator
+    =goal>
+        isa        play-game
+        state      encode-numer
+    =retrieval>
+    ?imaginal>
+        state      free
+  ==>
+    =goal>
         state      find-denom
     +imaginal>
         isa        fraction
-        numer      =numer
+        numer      =retrieval
   )
 
 (p find-denominator
@@ -92,8 +106,6 @@
         state      find-denom
     =imaginal>
   ==>
-    =goal>
-        state      attend-denom
     +visual-location>
         isa        visual-location
         kind       text
@@ -104,9 +116,12 @@
 (p attend-denominator
     =goal>
         isa        play-game
-        state      attend-denom
+        state      find-denom
     =imaginal>
     =visual-location>
+        isa        visual-location
+        kind       text
+      > screen-y   520
     ?visual>
         state      free
   ==>
@@ -131,9 +146,27 @@
         value      =denom
   ==>
     =goal>
+        state      encode-denom
+    +retrieval>
+        isa        integer
+        string     =denom
+    =imaginal>
+  )
+
+(p encode-denominator
+    =goal>
+        isa        play-game
+        state      encode-denom
+    =imaginal>
+        isa        fraction
+        numer      =numer
+        denom      nil
+    =retrieval>
+  ==>
+    =goal>
         state      retrieve
     *imaginal>
-        denom      =denom
+        denom      =retrieval
   )
 
 (p retrieve-experience
@@ -164,8 +197,8 @@
   ==>
     +retrieval>
         isa        fraction
-        numer      "1"
-        denom      "2"
+        numer      one
+        denom      two
     =imaginal>
   )
 
@@ -234,7 +267,7 @@
     =imaginal>
   ==>
     =goal>
-        state      find-sol
+        state      wait
     +manual>
         isa        click-mouse
     =imaginal>
@@ -303,7 +336,7 @@
         state      free
  ==>
     =goal>
-        state      find-numer
+        state      wait
     +manual>
         cmd        press-key
         key        "c"
@@ -319,14 +352,38 @@
     ?imaginal>
         state      free
  ==>
+    =goal>
+        state      quit
     +manual>
         cmd        press-key
         key        "e"
     -imaginal>
   )
 
-(goal-focus goal)
-
+(spp attend-numerator :u 20)
+(spp attend-target :u 20)
 (spp continue-game :u 20)
-(spp end-game :u 0)
+(spp end-game :u 0 :fixed-utility t)
 )
+
+(set-base-levels 
+  (one 10) (two   10) (three 10) (four 10) (five 10)
+  (six 10) (seven 10) (eight 10) (nine 10) (ten  10))
+
+(Set-similarities
+  (one   two   -0.1) (two   three -0.1) (three four  -0.1)
+  (four  five  -0.1) (five  six   -0.1) (six   seven -0.1) 
+  (seven eight -0.1) (eight nine  -0.1) (nine  ten   -0.1)
+  (one   three -0.2) (two   four  -0.2) (three five  -0.2) 
+  (four  six   -0.2) (five  seven -0.2) (six   eight -0.2) 
+  (seven nine  -0.2) (eight ten   -0.2) 
+  (one   four  -0.3) (two   five  -0.3) (three six   -0.3) (four seven -0.3) 
+  (five  eight -0.3) (six   nine  -0.3) (seven ten   -0.3)
+  (one   five  -0.4) (two   six   -0.4) (three seven -0.4) 
+  (four  eight -0.4) (five  nine  -0.4) (six   ten   -0.4)
+  (one   six   -0.5) (two   seven -0.5) (three eight -0.5) 
+  (four  nine  -0.5) (five  ten   -0.5)
+  (one   seven -0.6) (two   eight -0.6) (three nine  -0.6) (four ten   -0.6)
+  (one   eight -0.7) (two   nine  -0.7) (three ten   -0.7)
+  (one   nine  -0.8) (two   ten   -0.8)
+  (one   ten   -0.9))
