@@ -5,7 +5,7 @@
 
 (sgp :v t :esc t :egs 1 :show-focus nil :trace-detail low
      :ul t :ult nil
-     :mp 1.0 :rt -0.5 :act t
+     :mp 1.0 :rt -0.2 :act t
      :epl nil :pct nil
      :needs-mouse t :cursor-noise t
      :default-target-width 40)
@@ -195,11 +195,14 @@
         buffer     failure
     =imaginal>
   ==>
-    +retrieval>
-        isa        fraction
-        numer      one
-        denom      two
-    =imaginal>
+    =goal>
+        state      estimate
+    +visual-location>
+        isa        visual-location
+        kind       line
+        color      blue
+    *imaginal>
+        position   750
   )
 
 (p retrieval-success
