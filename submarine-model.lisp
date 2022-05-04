@@ -3,8 +3,9 @@
 
 (define-model submarine 
 
-(sgp :v t :esc t :egs 1 :show-focus nil :trace-detail low
-     :ul t :ult t
+(sgp :v t :esc t :egs 1 
+     :show-focus nil :trace-detail low
+     :ul t :ult nil
      :mp 1.0 :rt -0.2 :act nil
      :epl nil :pct nil
      :needs-mouse t :cursor-noise t
@@ -373,7 +374,7 @@
   (one 10) (two   10) (three 10) (four 10) (five 10)
   (six 10) (seven 10) (eight 10) (nine 10) (ten  10))
 
-(Set-similarities
+(set-similarities
   (one   two   -0.1) (two   three -0.1) (three four  -0.1)
   (four  five  -0.1) (five  six   -0.1) (six   seven -0.1) 
   (seven eight -0.1) (eight nine  -0.1) (nine  ten   -0.1)
