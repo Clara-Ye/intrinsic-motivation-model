@@ -7,21 +7,35 @@ import matplotlib.pyplot as plt
 
 actr.load_act_r_model("ACT-R:project;intrinsic-motivation-model;submarine-model.lisp")
 
-size_data = []
-time_data = []
-#fractions = [(1,10), (1,8),  (1,6),  (1,5),  (1,4), 
-#             (3,10), (1,3),  (3,8),  (2,5),  (3,7), 
-#             (1,2),  (3,5),  (5,8),  (2,3),  (7,10),
-#             (3,4),  (4,5),  (5,6),  (7,8),  (9,10)]
-fractions = [(1,4), (1,3), (1,2), (2,3), (3,4)]
-repetitions = {(1,10):0,  (1,8):0,  (1,6):0,  (1,5):0,  (1,4): 0, 
-               (3,10):0,  (1,3):0,  (3,8):0,  (2,5):0,  (3,7): 0, 
+size_success_data = [0.1250, 0.1375, 0.1750,
+                     0.2000, 0.2500, 0.2750,
+                     0.3000, 0.3375, 0.3750]
+size_engage_data = [5.100, 5.125, 5.200,
+                    5.250, 5.350, 5.400,
+                    5.375, 5.500, 5.575]
+ship_sizes = [0.04, 0.06, 0.08,
+              0.10, 0.16, 0.20,
+              0.24, 0.30, 0.40]
+
+time_success_data = [0.1550, 0.1750, 0.2135, 0.2250,
+                     0.2550, 0.2700, 0.2800, 0.3250]
+time_engage_data =  [4.600, 5.125, 5.175, 5.225,
+                     5.350, 5.450, 5.500, 5.650]
+time_limits = [2,  3,  4,  5,
+               8, 10, 15, 30]
+
+fractions = [(1,10), (1,8),  (1,6),  (1,5),  (1,4),
+             (3,10), (1,3),  (3,8),  (2,5),  (3,7),
+             (1,2),  (3,5),  (5,8),  (2,3),  (7,10),
+             (3,4),  (4,5),  (5,6),  (7,8),  (9,10)]
+#fractions = [(1,4), (1,3), (1,2), (2,3), (3,4)]
+repetitions = {(1,10):0,  (1,8):0,  (1,6):0,  (1,5):0,  (1,4): 0,
+               (3,10):0,  (1,3):0,  (3,8):0,  (2,5):0,  (3,7): 0,
                (1,2): 0,  (3,5):0,  (5,8):0,  (2,3):0,  (7,10):0,
                (3,4): 0,  (4,5):0,  (5,6):0,  (7,8):0,  (9,10):0}
-ship_sizes = [0.04, 0.06, 0.08, 0.10, 0.16, 0.20, 0.24, 0.30, 0.40]
-time_limits = [2, 3, 4, 5, 8, 10, 15, 30]
+
 click_loc = None
-end_choice = False
+end_choice = None
 current_numer = None
 current_fracline = None
 current_denom = None
@@ -35,12 +49,14 @@ def respond_to_mouse_click(model, coord, finger):
     click_loc = coord[0]
 
 def calculate_reward(numer, denom):
+    global repetitions
     fraction = (numer, denom)
     rep = repetitions[fraction]
     return 4 - 2*rep
 
 def model(numer, denom, size, time):
     global current_numer, current_fracline, current_denom
+    correct = 0
     if actr.visible_virtuals_available():
 
         # initial display
@@ -85,6 +101,7 @@ def model(numer, denom, size, time):
         print(click_loc, click_loc_trans, x_correct)
         if (left_end <= click_loc_trans) and (click_loc_trans <= right_end):
             actr.trigger_reward(calculate_reward(numer, denom))
+            correct = 1
         else:
             actr.trigger_reward(-1)
 
@@ -97,94 +114,158 @@ def model(numer, denom, size, time):
         end_choice = ''
 
         actr.set_buffer_chunk("goal", "second-goal")
-        actr.run(5)
+        actr.run_full_time(5)
 
         actr.remove_command_monitor("output-key", "end-response")
         actr.remove_command("end-response")
+    return correct
 
 def run_trial(size, time):
     global fractions, repetitions, end_choice
     fraction = random.choice(fractions)
     numer, denom = fraction
-    model(numer, denom, size, time)
-    repetitions[fraction] += 1
+    correct = model(numer, denom, size, time)
+    if correct: repetitions[fraction] += 1
+    return correct
 
 def run_game(size, time):
-    global end_choice
+    global repetitions, end_choice
+    repetitions = {(1,10):0,  (1,8):0,  (1,6):0,  (1,5):0,  (1,4): 0,
+                   (3,10):0,  (1,3):0,  (3,8):0,  (2,5):0,  (3,7): 0,
+                   (1,2): 0,  (3,5):0,  (5,8):0,  (2,3):0,  (7,10):0,
+                   (3,4): 0,  (4,5):0,  (5,6):0,  (7,8):0,  (9,10):0}
+    end_choice = ""
+    n_trials = success_trials = 0
     actr.reset()
-    end_choice = False
-    n_trials = 0
     while end_choice != "e":
-        run_trial(size, time)
         n_trials += 1
-        if n_trials > 10: break
-    return np.log(n_trials*5)
+        success_trials += run_trial(size, time)
+    return success_trials/n_trials, np.log(n_trials*6.6)
 
 def run_experiment(n):
     global ship_sizes, time_limits
-    size_results, time_results = list(), list()
+    size_success_results, size_engage_results = list(), list()
+    time_success_results, time_engage_results = list(), list()
     for _ in range(n):
-        sizes = actr.permute_list(ship_sizes)
-        times = actr.permute_list(time_limits)
-        exp_results = np.zeros((9,8))
+        success_results, engage_results = np.zeros((9,8)), np.zeros((9,8))
         for s in range(9):
             for t in range(8):
-                exp_results[s,t] = run_game(sizes[s], times[t])
-        size_results.append(np.mean(exp_results, axis=1))
-        time_results.append(np.mean(exp_results, axis=0))
-    size_results = np.array(size_results)
-    time_results = np.array(time_results)
-    print_results(size_results, time_results)
+                success, engage = run_game(ship_sizes[s], time_limits[t])
+                success_results[s,t] = success
+                engage_results[s,t] = engage
+        size_success_results.append(np.mean(success_results, axis=1))
+        time_success_results.append(np.mean(success_results, axis=0))
+        size_engage_results.append(np.mean(engage_results, axis=1))
+        time_engage_results.append(np.mean(engage_results, axis=0))
+    size_success_results = np.array(size_success_results)
+    time_success_results = np.array(time_success_results)
+    size_engage_results = np.array(size_engage_results)
+    time_engage_results = np.array(time_engage_results)
+    #print_results(size_success_results, time_success_results,
+    #              size_engage_results, time_engage_results)
+    plot_results(size_success_results, time_success_results,
+                  size_engage_results, time_engage_results)
     
-def print_results(size_results, time_results):
-    global size_data, time_data
-    size_results_mn = np.mean(size_results, axis=0)
-    time_results_mn = np.mean(time_results, axis=0)
+def print_results(size_success_results, time_success_results,
+                  size_engage_results, time_engage_results):
+    global size_success_data, time_success_data
+    global size_engage_data, time_engage_data
+
+    size_success_results_mn = np.mean(size_success_results, axis=0)
+    time_success_results_mn = np.mean(time_success_results, axis=0)
+    size_engage_results_mn = np.mean(size_engage_results, axis=0)
+    time_engage_results_mn = np.mean(time_engage_results, axis=0)
 
     print()
-    print("Size Results:")
-    actr.correlation(size_data, size_results_mn)
-    actr.mean_deviation(size_data, size_results_mn)
+    print("Size Success Results:")
+    actr.correlation(size_success_data, list(size_success_results_mn))
+    actr.mean_deviation(size_success_data, list(size_success_results_mn))
     print("Original   Current")
     for i in range(9):
         print(" ", end="")
-        print("{:.3f}".format(size_data[i]), end="      ")
-        print("{:.3f}".format(size_results[i]), end="\n")
+        print("{:.3f}".format(size_success_data[i]), end="      ")
+        print("{:.3f}".format(size_success_results_mn[i]), end="\n")
     print()
 
-    print("Time Results:")
-    actr.correlation(time_data, time_results_mn)
-    actr.mean_deviation(time_data, time_results_mn)
+    print("Time Success Results:")
+    actr.correlation(time_success_data, list(time_success_results_mn))
+    actr.mean_deviation(time_success_data, list(time_success_results_mn))
     print("Original   Current")
     for i in range(8):
         print(" ", end="")
-        print("{:.3f}".format(time_data[i]), end="      ")
-        print("{:.3f}".format(time_results_mn[i]), end="\n")
+        print("{:.3f}".format(time_success_data[i]), end="      ")
+        print("{:.3f}".format(time_success_results_mn[i]), end="\n")
     print()
 
-def plot_results(size_results, time_results):
-    global ship_sizes, time_limits, size_data, time_data
-    size_results_mn = np.mean(size_results, axis=0)
-    time_results_mn = np.mean(time_results, axis=0)
-    size_results_se = np.std(size_results, axis=0) / size_results.shape[0]
-    time_results_se = np.std(time_results, axis=0) / time_results.shape[0]
+    print("Size Engage Results:")
+    actr.correlation(size_engage_data, list(size_engage_results_mn))
+    actr.mean_deviation(size_engage_data, list(size_engage_results_mn))
+    print("Original   Current")
+    for i in range(9):
+        print(" ", end="")
+        print("{:.3f}".format(size_engage_data[i]), end="      ")
+        print("{:.3f}".format(size_engage_results_mn[i]), end="\n")
+    print()
+
+    print("Time Engage Results:")
+    actr.correlation(time_engage_data, list(time_engage_results_mn))
+    actr.mean_deviation(time_engage_data, list(time_engage_results_mn))
+    print("Original   Current")
+    for i in range(8):
+        print(" ", end="")
+        print("{:.3f}".format(time_engage_data[i]), end="      ")
+        print("{:.3f}".format(time_engage_results_mn[i]), end="\n")
+    print()
+
+def plot_results(size_success_results, time_success_results,
+                 size_engage_results, time_engage_results):
+    global ship_sizes, time_limits
+    global size_success_data, time_success_data
+    global size_engage_data, time_engage_data
+
+    size_success_results_mn = np.mean(size_success_results, axis=0)
+    time_success_results_mn = np.mean(time_success_results, axis=0)
+    size_success_results_se = np.std(size_success_results, axis=0) / size_success_results.shape[0]
+    time_success_results_se = np.std(time_success_results, axis=0) / time_success_results.shape[0]
+    size_engage_results_mn = np.mean(size_engage_results, axis=0)
+    time_engage_results_mn = np.mean(time_engage_results, axis=0)
+    size_engage_results_se = np.std(size_engage_results, axis=0) / size_engage_results.shape[0]
+    time_engage_results_se = np.std(time_engage_results, axis=0) / time_engage_results.shape[0]
 
     plt.figure()
-    plt.plot(ship_sizes, size_results_mn, yerr = size_results_se, color = "orange")
-    plt.plot(ship_sizes, size_data, color = "blue")
+    plt.plot(ship_sizes, size_success_results_mn, yerr = size_success_results_se, color = "orange")
+    plt.plot(ship_sizes, size_success_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Ship Sizes")
-    plt.ylabel("Engagement (log(Time x Trials))")
+    plt.ylabel("Success Rate")
     plt.title("Comparison of Model and Human Performance (Size)")
     plt.draw()
 
     plt.figure()
-    plt.plot(time_limits, time_results_mn, yerr = time_results_se, color = "orange")
-    plt.plot(time_limits, time_data, color = "blue")
+    plt.plot(time_limits, time_success_results_mn, yerr = time_success_results_se, color = "orange")
+    plt.plot(time_limits, time_success_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Time Limit")
-    plt.ylabel("Engagement (log(Time x Trials))")
+    plt.ylabel("Success Rate")
     plt.title("Comparison of Model and Human Performance (Time)")
+    plt.draw()
+
+    plt.figure()
+    plt.plot(ship_sizes, size_engage_results_mn, yerr = size_engage_results_se, color = "orange")
+    plt.plot(ship_sizes, size_engage_data, color = "blue")
+    plt.legend(labels = ["Model", "Human"], loc = "upper right")
+    plt.xlabel("Ship Sizes")
+    plt.ylabel("Engagement (log(Time x Trials))")
+    plt.title("Comparison of Model and Human Engagement (Size)")
+    plt.draw()
+
+    plt.figure()
+    plt.plot(time_limits, time_engage_results_mn, yerr = time_engage_results_se, color = "orange")
+    plt.plot(time_limits, time_engage_data, color = "blue")
+    plt.legend(labels = ["Model", "Human"], loc = "upper right")
+    plt.xlabel("Ship Sizes")
+    plt.ylabel("Engagement (log(Time x Trials))")
+    plt.title("Comparison of Model and Human Engagement (Time)")
     plt.draw()
 
     plt.ioff()

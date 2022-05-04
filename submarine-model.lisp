@@ -4,8 +4,8 @@
 (define-model submarine 
 
 (sgp :v t :esc t :egs 1 :show-focus nil :trace-detail low
-     :ul t :ult nil
-     :mp 1.0 :rt -0.2 :act t
+     :ul t :ult t
+     :mp 1.0 :rt -0.2 :act nil
      :epl nil :pct nil
      :needs-mouse t :cursor-noise t
      :default-target-width 40)
