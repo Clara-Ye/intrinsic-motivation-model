@@ -3,13 +3,14 @@
 
 (define-model submarine 
 
-(sgp :v t :esc t :egs 1 
-     :show-focus nil :trace-detail low
+(sgp :esc t :v nil :trace-detail low
+     :model-warnings nil :style-warnings nil
+     :show-focus nil
      :ul t :ult nil
-     :mp 1.0 :rt -0.2 :act nil
+     :mp 1.0 :rt -0.2 :ans 0.2 :act nil
      :epl nil :pct nil
      :needs-mouse t :cursor-noise t
-     :default-target-width 40)
+     :default-target-width 30)
 
 (chunk-type play-game state)
 (chunk-type integer string)
@@ -366,9 +367,8 @@
 
 (spp attend-numerator :u 20)
 (spp attend-target :u 20)
-(spp continue-game :u 20)
+(spp continue-game :u 40)
 (spp end-game :u 0 :fixed-utility t)
-)
 
 (set-base-levels 
   (one 10) (two   10) (three 10) (four 10) (five 10)
@@ -391,3 +391,5 @@
   (one   eight -0.7) (two   nine  -0.7) (three ten   -0.7)
   (one   nine  -0.8) (two   ten   -0.8)
   (one   ten   -0.9))
+
+)

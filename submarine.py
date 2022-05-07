@@ -24,6 +24,9 @@ time_engage_data =  [4.600, 5.125, 5.175, 5.225,
 time_limits = [2,  3,  4,  5,
                8, 10, 15, 30]
 
+size_success_results, size_engage_results = list(), list()
+time_success_results, time_engage_results = list(), list()
+
 fractions = [(1,10), (1,8),  (1,6),  (1,5),  (1,4),
              (3,10), (1,3),  (3,8),  (2,5),  (3,7),
              (1,2),  (3,5),  (5,8),  (2,3),  (7,10),
@@ -53,7 +56,7 @@ def calculate_reward(numer, denom):
     global repetitions
     fraction = (numer, denom)
     rep = repetitions[fraction]
-    return 6 - 2*rep
+    return 8 - 4*rep
 
 def model(numer, denom, size, time):
     global current_numer, current_fracline, current_denom
@@ -64,10 +67,12 @@ def model(numer, denom, size, time):
 
     if actr.visible_virtuals_available():
 
-        # initial display
-        window = actr.open_exp_window("Submarine Game", visible=True,
+        # set up window and time tracker
+        window = actr.open_exp_window("Submarine Game", visible=False,
                                       width=500,height=300,x=500,y=300)
         actr.install_device(window)
+
+        # initial display of line and fraction
         num_line = actr.add_line_to_exp_window(window,[50,150],[450,150],"blue")
         current_numer = actr.add_text_to_exp_window(window, str(numer), x=250, y=200)
         current_fracline = actr.add_text_to_exp_window(window, "-", x=250, y=210)
@@ -77,7 +82,8 @@ def model(numer, denom, size, time):
         actr.add_command("attack", respond_to_mouse_click, 
                          "Submarine task attack mouse click")
         actr.monitor_command("click-mouse", "attack")
-        actr.start_hand_at_mouse()
+        # remove if need to debug:
+        #actr.start_hand_at_mouse()
 
         actr.set_buffer_chunk("goal", "first-goal")
         actr.run(time)
@@ -100,12 +106,11 @@ def model(numer, denom, size, time):
                                                 "red")
 
         click_loc_trans = 50 + (click_loc-550)/(950-550) * (450-50)
-        print(click_loc, click_loc_trans, x_correct)
         if (left_end <= click_loc_trans) and (click_loc_trans <= right_end):
             actr.trigger_reward(calculate_reward(numer, denom))
             correct = 1
         else:
-            actr.trigger_reward(-1)
+            actr.trigger_reward(-2)
 
         # trial-end choice
         actr.add_command("end-response", respond_to_key_press, 
@@ -113,7 +118,7 @@ def model(numer, denom, size, time):
         actr.monitor_command("output-key", "end-response")
 
         actr.set_buffer_chunk("goal", "second-goal")
-        actr.run_full_time(5)
+        actr.run(5)
 
         actr.remove_command_monitor("output-key", "end-response")
         actr.remove_command("end-response")
@@ -121,7 +126,7 @@ def model(numer, denom, size, time):
     return correct
 
 # runs a single trial with a random fraction
-def run_trial(size, time):    
+def run_trial(size, time):
     global fractions, repetitions, end_choice
     fraction = random.choice(fractions)
     numer, denom = fraction
@@ -139,23 +144,27 @@ def run_game(size, time):
                    (3,4): 0,  (4,5):0,  (5,6):0,  (7,8):0,  (9,10):0}
     end_choice = ""
     n_trials = success_trials = 0
+    actr.reset()
 
     # run trials until model says stop
-    actr.reset()
-    #remove after done debugging
-    #actr.start_hand_at_mouse()
+    actr.start_hand_at_mouse()
     while end_choice != "e":
         n_trials += 1
-        success_trials += run_trial(size, time)
+        correct = run_trial(size, time)
+        success_trials += correct
+    total_time = actr.get_time(model_time=True) / 1000
+    #print(n_trials, total_time)
 
     # calculate metrics
     success_rate = success_trials/n_trials
-    engagement = np.log(n_trials*6.6)
+    engagement = np.log(n_trials*total_time)
     return success_rate, engagement
 
 # runs one game for each combination of size and time
 def run_experiment(n):
     global ship_sizes, time_limits
+    global size_success_results, size_engage_results
+    global time_success_results, time_engage_results
     size_success_results, size_engage_results = list(), list()
     time_success_results, time_engage_results = list(), list()
 
@@ -179,16 +188,15 @@ def run_experiment(n):
     time_success_results = np.array(time_success_results)
     size_engage_results = np.array(size_engage_results)
     time_engage_results = np.array(time_engage_results)
-    print_results(size_success_results, time_success_results,
-                  size_engage_results, time_engage_results)
-    plot_results(size_success_results, time_success_results,
-                  size_engage_results, time_engage_results)
+    print_results()
+    plot_results()
 
 # prints comparison of numeric results
-def print_results(size_success_results, time_success_results,
-                  size_engage_results, time_engage_results):
+def print_results():
     global size_success_data, time_success_data
     global size_engage_data, time_engage_data
+    global size_success_results, size_engage_results
+    global time_success_results, time_engage_results
 
     # calculate means across experiments
     size_success_results_mn = np.mean(size_success_results, axis=0)
@@ -238,11 +246,12 @@ def print_results(size_success_results, time_success_results,
     print()
 
 # plots line graphs of comparison of results
-def plot_results(size_success_results, time_success_results,
-                 size_engage_results, time_engage_results):
+def plot_results():
     global ship_sizes, time_limits
     global size_success_data, time_success_data
     global size_engage_data, time_engage_data
+    global size_success_results, size_engage_results
+    global time_success_results, time_engage_results
 
     # calculate means and ses across experiments
     size_success_results_mn = np.mean(size_success_results, axis=0)
@@ -255,7 +264,10 @@ def plot_results(size_success_results, time_success_results,
     time_engage_results_se = np.std(time_engage_results, axis=0) / time_engage_results.shape[0]
 
     plt.figure()
-    plt.plot(ship_sizes, size_success_results_mn, yerr = size_success_results_se, color = "orange")
+    plt.errorbar(x = ship_sizes, 
+                 y = size_success_results_mn, 
+                 yerr = size_success_results_se, 
+                 color = "orange")
     plt.plot(ship_sizes, size_success_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Ship Sizes")
@@ -264,7 +276,10 @@ def plot_results(size_success_results, time_success_results,
     plt.draw()
 
     plt.figure()
-    plt.plot(time_limits, time_success_results_mn, yerr = time_success_results_se, color = "orange")
+    plt.errorbar(x = time_limits, 
+                 y = time_success_results_mn, 
+                 yerr = time_success_results_se,
+                 color = "orange")
     plt.plot(time_limits, time_success_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Time Limit")
@@ -273,7 +288,10 @@ def plot_results(size_success_results, time_success_results,
     plt.draw()
 
     plt.figure()
-    plt.plot(ship_sizes, size_engage_results_mn, yerr = size_engage_results_se, color = "orange")
+    plt.errorbar(x = ship_sizes, 
+                 y = size_engage_results_mn, 
+                 yerr = size_engage_results_se,
+                 color = "orange")
     plt.plot(ship_sizes, size_engage_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Ship Sizes")
@@ -282,7 +300,10 @@ def plot_results(size_success_results, time_success_results,
     plt.draw()
 
     plt.figure()
-    plt.plot(time_limits, time_engage_results_mn, yerr = time_engage_results_se, color = "orange")
+    plt.errorbar(x = time_limits, 
+                 y = time_engage_results_mn, 
+                 yerr = time_engage_results_se,
+                 color = "orange")
     plt.plot(time_limits, time_engage_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Ship Sizes")
