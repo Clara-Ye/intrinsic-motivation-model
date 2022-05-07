@@ -6,11 +6,11 @@
 (sgp :esc t :v nil :trace-detail low
      :model-warnings nil :style-warnings nil
      :show-focus nil
-     :ul t :ult nil
-     :mp 1.0 :rt -0.2 :ans 0.2 :act nil
+     :ul t :egs 1 :ult nil
+     :mp 1.0 :rt -0.2 :act nil
      :epl nil :pct nil
      :needs-mouse t :cursor-noise t
-     :default-target-width 30)
+     :default-target-width 10)
 
 (chunk-type play-game state)
 (chunk-type integer string)
@@ -77,8 +77,6 @@
     =visual>
         isa        text
         value      =numer
-    ?imaginal>
-        state      free
   ==>
     =goal>
         state      encode-numer
@@ -167,7 +165,7 @@
   ==>
     =goal>
         state      retrieve
-    *imaginal>
+    =imaginal>
         denom      =retrieval
   )
 
@@ -203,7 +201,7 @@
         isa        visual-location
         kind       line
         color      blue
-    *imaginal>
+    =imaginal>
         position   750
   )
 
@@ -225,7 +223,7 @@
         isa        visual-location
         kind       line
         color      blue
-    *imaginal>
+    =imaginal>
         position   =posit
   )
 
@@ -371,8 +369,8 @@
 (spp end-game :u 0 :fixed-utility t)
 
 (set-base-levels 
-  (one 10) (two   10) (three 10) (four 10) (five 10)
-  (six 10) (seven 10) (eight 10) (nine 10) (ten  10))
+  (one 10)  (two   10) (three 10) (four 10) (five 10)
+  (six 10)  (seven 10) (eight 10) (nine 10) (ten  10))
 
 (set-similarities
   (one   two   -0.1) (two   three -0.1) (three four  -0.1)

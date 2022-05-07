@@ -13,9 +13,12 @@ size_success_data = [0.1250, 0.1375, 0.1750,
 size_engage_data = [5.100, 5.125, 5.200,
                     5.250, 5.350, 5.400,
                     5.375, 5.500, 5.575]
-ship_sizes = [0.04, 0.06, 0.08,
-              0.10, 0.16, 0.20,
-              0.24, 0.30, 0.40]
+#ship_sizes = [0.04, 0.06, 0.08,
+#              0.10, 0.16, 0.20,
+#              0.24, 0.30, 0.40]
+ship_sizes = [0.02, 0.03, 0.04, 
+              0.05, 0.08, 0.10,
+              0.12, 0.15, 0.20]
 
 time_success_data = [0.1550, 0.1750, 0.2135, 0.2250,
                      0.2550, 0.2700, 0.2800, 0.3250]
@@ -31,7 +34,6 @@ fractions = [(1,10), (1,8),  (1,6),  (1,5),  (1,4),
              (3,10), (1,3),  (3,8),  (2,5),  (3,7),
              (1,2),  (3,5),  (5,8),  (2,3),  (7,10),
              (3,4),  (4,5),  (5,6),  (7,8),  (9,10)]
-#fractions = [(1,4), (1,3), (1,2), (2,3), (3,4)]
 repetitions = {(1,10):0,  (1,8):0,  (1,6):0,  (1,5):0,  (1,4): 0,
                (3,10):0,  (1,3):0,  (3,8):0,  (2,5):0,  (3,7): 0,
                (1,2): 0,  (3,5):0,  (5,8):0,  (2,3):0,  (7,10):0,
@@ -56,7 +58,7 @@ def calculate_reward(numer, denom):
     global repetitions
     fraction = (numer, denom)
     rep = repetitions[fraction]
-    return 8 - 4*rep
+    return 10 - 6*rep
 
 def model(numer, denom, size, time):
     global current_numer, current_fracline, current_denom
@@ -111,6 +113,7 @@ def model(numer, denom, size, time):
             correct = 1
         else:
             actr.trigger_reward(-2)
+        #print(click_loc_trans, x_correct)
 
         # trial-end choice
         actr.add_command("end-response", respond_to_key_press, 
@@ -118,7 +121,7 @@ def model(numer, denom, size, time):
         actr.monitor_command("output-key", "end-response")
 
         actr.set_buffer_chunk("goal", "second-goal")
-        actr.run(5)
+        actr.run_full_time(2)
 
         actr.remove_command_monitor("output-key", "end-response")
         actr.remove_command("end-response")
@@ -157,7 +160,7 @@ def run_game(size, time):
 
     # calculate metrics
     success_rate = success_trials/n_trials
-    engagement = np.log(n_trials*total_time)
+    engagement = np.log(n_trials*(total_time-n_trials*2))
     return success_rate, engagement
 
 # runs one game for each combination of size and time
@@ -258,17 +261,17 @@ def plot_results():
     time_success_results_mn = np.mean(time_success_results, axis=0)
     size_engage_results_mn = np.mean(size_engage_results, axis=0)
     time_engage_results_mn = np.mean(time_engage_results, axis=0)
-    size_success_results_se = np.std(size_success_results, axis=0) / size_success_results.shape[0]
-    time_success_results_se = np.std(time_success_results, axis=0) / time_success_results.shape[0]
-    size_engage_results_se = np.std(size_engage_results, axis=0) / size_engage_results.shape[0]
-    time_engage_results_se = np.std(time_engage_results, axis=0) / time_engage_results.shape[0]
+    size_success_results_se = np.std(size_success_results, axis=0) / np.sqrt(size_success_results.shape[0])
+    time_success_results_se = np.std(time_success_results, axis=0) / np.sqrt(time_success_results.shape[0])
+    size_engage_results_se = np.std(size_engage_results, axis=0) / np.sqrt(size_engage_results.shape[0])
+    time_engage_results_se = np.std(time_engage_results, axis=0) / np.sqrt(time_engage_results.shape[0])
 
     plt.figure()
+    plt.plot(ship_sizes, size_success_data, color = "blue")
     plt.errorbar(x = ship_sizes, 
                  y = size_success_results_mn, 
                  yerr = size_success_results_se, 
                  color = "orange")
-    plt.plot(ship_sizes, size_success_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Ship Sizes")
     plt.ylabel("Success Rate")
@@ -276,11 +279,11 @@ def plot_results():
     plt.draw()
 
     plt.figure()
+    plt.plot(time_limits, time_success_data, color = "blue")
     plt.errorbar(x = time_limits, 
                  y = time_success_results_mn, 
                  yerr = time_success_results_se,
                  color = "orange")
-    plt.plot(time_limits, time_success_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Time Limit")
     plt.ylabel("Success Rate")
@@ -288,11 +291,11 @@ def plot_results():
     plt.draw()
 
     plt.figure()
+    plt.plot(ship_sizes, size_engage_data, color = "blue")
     plt.errorbar(x = ship_sizes, 
                  y = size_engage_results_mn, 
                  yerr = size_engage_results_se,
                  color = "orange")
-    plt.plot(ship_sizes, size_engage_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Ship Sizes")
     plt.ylabel("Engagement (log(Time x Trials))")
@@ -300,11 +303,11 @@ def plot_results():
     plt.draw()
 
     plt.figure()
+    plt.plot(time_limits, time_engage_data, color = "blue")
     plt.errorbar(x = time_limits, 
                  y = time_engage_results_mn, 
                  yerr = time_engage_results_se,
                  color = "orange")
-    plt.plot(time_limits, time_engage_data, color = "blue")
     plt.legend(labels = ["Model", "Human"], loc = "upper right")
     plt.xlabel("Ship Sizes")
     plt.ylabel("Engagement (log(Time x Trials))")
