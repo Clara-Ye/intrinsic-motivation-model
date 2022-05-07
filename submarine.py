@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 
 actr.load_act_r_model("ACT-R:project;intrinsic-motivation-model;submarine-model.lisp")
 
-size_success_data = [0.1250, 0.1375, 0.1750,
-                     0.2000, 0.2500, 0.2750,
-                     0.3000, 0.3375, 0.3750]
-size_engage_data = [5.100, 5.125, 5.200,
-                    5.250, 5.350, 5.400,
-                    5.375, 5.500, 5.575]
+size_success_data = [0.1375, 0.1450, 0.1700,
+                     0.2050, 0.2500, 0.2750,
+                     0.2975, 0.3375, 0.3825]
+size_engage_data = [5.110, 5.120, 5.170,
+                    5.250, 5.325, 5.400,
+                    5.440, 5.500, 5.575]
 #ship_sizes = [0.04, 0.06, 0.08,
 #              0.10, 0.16, 0.20,
 #              0.24, 0.30, 0.40]
@@ -20,10 +20,10 @@ ship_sizes = [0.02, 0.03, 0.04,
               0.05, 0.08, 0.10,
               0.12, 0.15, 0.20]
 
-time_success_data = [0.1550, 0.1750, 0.2135, 0.2250,
-                     0.2550, 0.2700, 0.2800, 0.3250]
-time_engage_data =  [4.600, 5.125, 5.175, 5.225,
-                     5.350, 5.450, 5.500, 5.650]
+time_success_data = [0.1575, 0.1850, 0.2175, 0.2300,
+                     0.2525, 0.2650, 0.2800, 0.3200]
+time_engage_data =  [4.825, 5.125, 5.175, 5.200,
+                     5.340, 5.475, 5.500, 5.675]
 time_limits = [2,  3,  4,  5,
                8, 10, 15, 30]
 
@@ -54,11 +54,12 @@ def respond_to_mouse_click(model, coord, finger):
     click_loc = coord[0]
 
 # calculates reward that diminishes after repeatedly getting correct
-def calculate_reward(numer, denom):
+def calculate_reward(numer, denom, correct):
     global repetitions
     fraction = (numer, denom)
     rep = repetitions[fraction]
-    return 10 - 6*rep
+    if correct: return 10 - 6*rep
+    else: return -5 - 6*rep
 
 def model(numer, denom, size, time):
     global current_numer, current_fracline, current_denom
@@ -81,13 +82,13 @@ def model(numer, denom, size, time):
         current_denom = actr.add_text_to_exp_window(window, str(denom), x=250, y=220)
 
         # collects player attack
+        actr.set_buffer_chunk("goal", "first-goal")
         actr.add_command("attack", respond_to_mouse_click, 
                          "Submarine task attack mouse click")
         actr.monitor_command("click-mouse", "attack")
         # remove if need to debug:
         #actr.start_hand_at_mouse()
 
-        actr.set_buffer_chunk("goal", "first-goal")
         actr.run(time)
         actr.remove_items_from_exp_window(window,current_numer)
         actr.remove_items_from_exp_window(window,current_fracline)
@@ -96,6 +97,7 @@ def model(numer, denom, size, time):
 
         actr.remove_command_monitor("click-mouse", "attack")
         actr.remove_command("attack")
+        actr.set_buffer_chunk("goal", "second-goal")
 
         # checks and displays answer
         width_correct = size * (450-50)
@@ -108,19 +110,15 @@ def model(numer, denom, size, time):
                                                 "red")
 
         click_loc_trans = 50 + (click_loc-550)/(950-550) * (450-50)
-        if (left_end <= click_loc_trans) and (click_loc_trans <= right_end):
-            actr.trigger_reward(calculate_reward(numer, denom))
-            correct = 1
-        else:
-            actr.trigger_reward(-2)
-        #print(click_loc_trans, x_correct)
+        correct = (left_end <= click_loc_trans) and (click_loc_trans <= right_end)
+        actr.trigger_reward(calculate_reward(numer, denom, correct))
+        print(click_loc_trans, x_correct)
 
         # trial-end choice
         actr.add_command("end-response", respond_to_key_press, 
                          "Submarine task trial end key response")
         actr.monitor_command("output-key", "end-response")
 
-        actr.set_buffer_chunk("goal", "second-goal")
         actr.run_full_time(2)
 
         actr.remove_command_monitor("output-key", "end-response")
@@ -134,7 +132,7 @@ def run_trial(size, time):
     fraction = random.choice(fractions)
     numer, denom = fraction
     correct = model(numer, denom, size, time)
-    if correct: repetitions[fraction] += 1
+    repetitions[fraction] += 1
     return correct
 
 # runs a full game with a single combination of size and time
@@ -272,7 +270,7 @@ def plot_results():
                  y = size_success_results_mn, 
                  yerr = size_success_results_se, 
                  color = "orange")
-    plt.legend(labels = ["Model", "Human"], loc = "upper right")
+    plt.legend(labels = ["Human", "Model"], loc = "upper right")
     plt.xlabel("Ship Sizes")
     plt.ylabel("Success Rate")
     plt.title("Comparison of Model and Human Performance (Size)")
@@ -284,7 +282,7 @@ def plot_results():
                  y = time_success_results_mn, 
                  yerr = time_success_results_se,
                  color = "orange")
-    plt.legend(labels = ["Model", "Human"], loc = "upper right")
+    plt.legend(labels = ["Human", "Model"], loc = "upper right")
     plt.xlabel("Time Limit")
     plt.ylabel("Success Rate")
     plt.title("Comparison of Model and Human Performance (Time)")
@@ -296,7 +294,7 @@ def plot_results():
                  y = size_engage_results_mn, 
                  yerr = size_engage_results_se,
                  color = "orange")
-    plt.legend(labels = ["Model", "Human"], loc = "upper right")
+    plt.legend(labels = ["Human", "Model"], loc = "upper right")
     plt.xlabel("Ship Sizes")
     plt.ylabel("Engagement (log(Time x Trials))")
     plt.title("Comparison of Model and Human Engagement (Size)")
@@ -308,7 +306,7 @@ def plot_results():
                  y = time_engage_results_mn, 
                  yerr = time_engage_results_se,
                  color = "orange")
-    plt.legend(labels = ["Model", "Human"], loc = "upper right")
+    plt.legend(labels = ["Human", "Model"], loc = "upper right")
     plt.xlabel("Ship Sizes")
     plt.ylabel("Engagement (log(Time x Trials))")
     plt.title("Comparison of Model and Human Engagement (Time)")

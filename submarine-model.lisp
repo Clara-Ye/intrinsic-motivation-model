@@ -6,11 +6,11 @@
 (sgp :esc t :v nil :trace-detail low
      :model-warnings nil :style-warnings nil
      :show-focus nil
-     :ul t :egs 1 :ult nil
-     :mp 1.0 :rt -0.2 :act nil
-     :epl nil :pct nil
+     :ul t :egs 1 :nu 5 :ult nil
+     :mp 1.0 :rt -0.2 :lf 1.0 :act nil
+     :epl t :pct nil
      :needs-mouse t :cursor-noise t
-     :default-target-width 10)
+     :default-target-width 40)
 
 (chunk-type play-game state)
 (chunk-type integer string)
@@ -21,8 +21,7 @@
     (second-goal isa play-game state find-sol)
     (find-numer) (read-numer) (encode-numer)
     (find-denom) (read-denom) (encode-denom)
-    (retrieve) (retrieved) (estimate)
-    (prepare-mouse) (move-mouse)
+    (solve) (estimate) (prepare-mouse) (move-mouse)
     (find-sol) (memorize-sol) 
     (end-choice) (wait) (quit)
 )
@@ -38,7 +37,9 @@
     (eight isa integer  string "8")
     (nine  isa integer  string "9")
     (ten   isa integer  string "10")
-    (half  isa fraction  numer one  denom two  position 750))
+    (half          isa fraction  numer one    denom two   position 750)
+    (one-fourth    isa fraction  numer one    denom four  position 650)
+    (three-fourth  isa fraction  numer three  denom four  position 850))
  
 
 (p find-numerator
@@ -164,76 +165,58 @@
     =retrieval>
   ==>
     =goal>
-        state      retrieve
+        state      solve
     =imaginal>
         denom      =retrieval
   )
 
-(p retrieve-experience
+(p solve-game
     =goal>
         isa        play-game
-        state      retrieve
+        state      solve
     =imaginal>
         isa        fraction
         numer      =numer
         denom      =denom
   ==>
     =goal>
-        state      retrieved
+        state      estimate
     +retrieval>
         isa        fraction
         numer      =numer
         denom      =denom
+    +visual-location>
+        isa        visual-location
+        kind       line
+        color      blue
     =imaginal>
   )
 
 (p retrieval-failure
     =goal>
         isa        play-game
-        state      retrieved
+        state      estimate
     ?retrieval>
         buffer     failure
     =imaginal>
+    =visual-location>
   ==>
     =goal>
-        state      estimate
-    +visual-location>
+        state      prepare-mouse
+    =visual-location>
         isa        visual-location
-        kind       line
-        color      blue
+        screen-x   750
     =imaginal>
-        position   750
   )
 
 (p retrieval-success
     =goal>
         isa        play-game
-        state      retrieved
+        state      estimate
     =retrieval>
         isa        fraction
         position   =posit
     =imaginal>
-        isa        fraction
-        numer      =numer
-        denom      =denom
-  ==>
-    =goal>
-        state      estimate
-    +visual-location>
-        isa        visual-location
-        kind       line
-        color      blue
-    =imaginal>
-        position   =posit
-  )
-
-(p estimate-position
-    =goal>
-        isa        play-game
-        state      estimate
-    =imaginal>
-        isa        fraction
-        position   =posit
     =visual-location>
   ==>
     =goal>
@@ -275,6 +258,7 @@
         isa        click-mouse
     =imaginal>
   )
+
 
 (p find-target
     =goal>
@@ -364,6 +348,7 @@
   )
 
 (spp attend-numerator :u 20)
+(spp attend-denominator :u 20)
 (spp attend-target :u 20)
 (spp continue-game :u 40)
 (spp end-game :u 0 :fixed-utility t)
