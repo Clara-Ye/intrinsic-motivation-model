@@ -13,9 +13,11 @@ size_success_data = [0.1250, 0.1450, 0.1700,
 size_engage_data = [5.110, 5.120, 5.170,
                     5.250, 5.325, 5.400,
                     5.440, 5.500, 5.575]
+# sizes reported in methods section
 #ship_sizes = [0.04, 0.06, 0.08,
 #              0.10, 0.16, 0.20,
 #              0.24, 0.30, 0.40]
+# sizes reported in results section
 ship_sizes = [0.02, 0.03, 0.04, 
               0.05, 0.08, 0.10,
               0.12, 0.15, 0.20]
@@ -87,7 +89,7 @@ def model(numer, denom, size, time):
                          "Submarine task attack mouse click")
         actr.monitor_command("click-mouse", "attack")
         # remove if need to debug:
-        #actr.start_hand_at_mouse()
+        actr.start_hand_at_mouse()
 
         actr.run(time)
         actr.remove_items_from_exp_window(window,current_numer)
@@ -97,6 +99,7 @@ def model(numer, denom, size, time):
 
         actr.remove_command_monitor("click-mouse", "attack")
         actr.remove_command("attack")
+        actr.clear_buffer("goal")
         actr.set_buffer_chunk("goal", "second-goal")
 
         # checks and displays answer
@@ -270,22 +273,10 @@ def plot_results():
                  y = size_success_results_mn, 
                  yerr = size_success_results_se, 
                  color = "orange")
-    plt.legend(labels = ["Human", "Model"], loc = "upper right")
-    plt.xlabel("Ship Sizes")
+    plt.legend(labels = ["Human", "Model"], loc = "lower right")
+    plt.xlabel("Target Size")
     plt.ylabel("Success Rate")
     plt.title("Comparison of Model and Human Performance (Size)")
-    plt.draw()
-
-    plt.figure()
-    plt.plot(time_limits, time_success_data, color = "blue")
-    plt.errorbar(x = time_limits, 
-                 y = time_success_results_mn, 
-                 yerr = time_success_results_se,
-                 color = "orange")
-    plt.legend(labels = ["Human", "Model"], loc = "upper right")
-    plt.xlabel("Time Limit")
-    plt.ylabel("Success Rate")
-    plt.title("Comparison of Model and Human Performance (Time)")
     plt.draw()
 
     plt.figure()
@@ -294,10 +285,22 @@ def plot_results():
                  y = size_engage_results_mn, 
                  yerr = size_engage_results_se,
                  color = "orange")
-    plt.legend(labels = ["Human", "Model"], loc = "upper right")
-    plt.xlabel("Ship Sizes")
+    plt.legend(labels = ["Human", "Model"], loc = "lower right")
+    plt.xlabel("Target Size")
     plt.ylabel("Engagement (log(Time x Trials))")
     plt.title("Comparison of Model and Human Engagement (Size)")
+    plt.draw()
+
+    plt.figure()
+    plt.plot(time_limits, time_success_data, color = "blue")
+    plt.errorbar(x = time_limits, 
+                 y = time_success_results_mn, 
+                 yerr = time_success_results_se,
+                 color = "orange")
+    plt.legend(labels = ["Human", "Model"], loc = "lower right")
+    plt.xlabel("Time Limit")
+    plt.ylabel("Success Rate")
+    plt.title("Comparison of Model and Human Performance (Time)")
     plt.draw()
 
     plt.figure()
@@ -306,8 +309,8 @@ def plot_results():
                  y = time_engage_results_mn, 
                  yerr = time_engage_results_se,
                  color = "orange")
-    plt.legend(labels = ["Human", "Model"], loc = "upper right")
-    plt.xlabel("Ship Sizes")
+    plt.legend(labels = ["Human", "Model"], loc = "lower right")
+    plt.xlabel("Time Limit")
     plt.ylabel("Engagement (log(Time x Trials))")
     plt.title("Comparison of Model and Human Engagement (Time)")
     plt.draw()
