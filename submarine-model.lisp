@@ -3,7 +3,7 @@
 
 (define-model submarine 
 
-(sgp :esc t :v t :trace-detail low
+(sgp :esc t :v nil :trace-detail low
      :model-warnings nil :style-warnings nil
      :show-focus nil
      :ul t :egs 1 :nu 5 :ult nil
@@ -350,7 +350,7 @@
 (spp attend-numerator :u 100)
 (spp attend-denominator :u 100)
 (spp attend-target :u 100)
-(spp continue-game :u 32)
+(spp continue-game :u 36)
 (spp end-game :u 0 :fixed-utility t)
 
 (set-base-levels 

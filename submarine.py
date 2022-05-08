@@ -42,6 +42,8 @@ repetitions = {(1,10):0,  (1,8):0,  (1,6):0,  (1,5):0,  (1,4): 0,
                (3,4): 0,  (4,5):0,  (5,6):0,  (7,8):0,  (9,10):0}
 
 click_loc = None
+start_time = None
+click_time = None
 end_choice = None
 current_numer = None
 current_fracline = None
@@ -52,7 +54,8 @@ def respond_to_key_press(model, key):
     end_choice = key
 
 def respond_to_mouse_click(model, coord, finger):
-    global click_loc
+    global click_loc, click_time
+    click_time = actr.get_time(model_time=True) / 1000
     click_loc = coord[0]
 
 # calculates reward that diminishes after repeatedly getting correct
@@ -65,9 +68,10 @@ def calculate_reward(numer, denom, correct):
 
 def model(numer, denom, size, time):
     global current_numer, current_fracline, current_denom
-    global end_choice, click_loc
+    global end_choice, click_loc, start_time, click_time
     end_choice = ""
-    click_loc = -1
+    click_loc
+    click_time = 99
     correct = 0
 
     if actr.visible_virtuals_available():
@@ -84,14 +88,15 @@ def model(numer, denom, size, time):
         current_denom = actr.add_text_to_exp_window(window, str(denom), x=250, y=220)
 
         # collects player attack
-        actr.set_buffer_chunk("goal", "first-goal")
         actr.add_command("attack", respond_to_mouse_click, 
                          "Submarine task attack mouse click")
         actr.monitor_command("click-mouse", "attack")
+        actr.set_buffer_chunk("goal", "first-goal")
+        start_time = actr.get_time(model_time=True) / 1000
         # remove if need to debug:
-        actr.start_hand_at_mouse()
+        #actr.start_hand_at_mouse()
 
-        actr.run(time)
+        actr.run(5)
         actr.remove_items_from_exp_window(window,current_numer)
         actr.remove_items_from_exp_window(window,current_fracline)
         actr.remove_items_from_exp_window(window,current_denom)
@@ -99,8 +104,6 @@ def model(numer, denom, size, time):
 
         actr.remove_command_monitor("click-mouse", "attack")
         actr.remove_command("attack")
-        actr.clear_buffer("goal")
-        actr.set_buffer_chunk("goal", "second-goal")
 
         # checks and displays answer
         width_correct = size * (450-50)
@@ -113,30 +116,33 @@ def model(numer, denom, size, time):
                                                 "red")
 
         click_loc_trans = 50 + (click_loc-550)/(950-550) * (450-50)
-        correct = (left_end <= click_loc_trans) and (click_loc_trans <= right_end)
+        on_time = (click_time - start_time <= time)
+        correct = (on_time) and (left_end <= click_loc_trans) and (click_loc_trans <= right_end)
         actr.trigger_reward(calculate_reward(numer, denom, correct))
+        # remove if need to debug
         #print(click_loc_trans, x_correct)
 
         # trial-end choice
         actr.add_command("end-response", respond_to_key_press, 
                          "Submarine task trial end key response")
         actr.monitor_command("output-key", "end-response")
+        actr.set_buffer_chunk("goal", "second-goal")
 
         actr.run_full_time(2)
 
         actr.remove_command_monitor("output-key", "end-response")
         actr.remove_command("end-response")
 
-    return correct
+    return correct, on_time
 
 # runs a single trial with a random fraction
 def run_trial(size, time):
     global fractions, repetitions, end_choice
     fraction = random.choice(fractions)
     numer, denom = fraction
-    correct = model(numer, denom, size, time)
+    correct, on_time = model(numer, denom, size, time)
     repetitions[fraction] += 1
-    return correct
+    return correct, on_time
 
 # runs a full game with a single combination of size and time
 def run_game(size, time):
@@ -154,25 +160,30 @@ def run_game(size, time):
     actr.start_hand_at_mouse()
     while end_choice != "e":
         n_trials += 1
-        correct = run_trial(size, time)
+        correct, on_time = run_trial(size, time)
         success_trials += correct
     total_time = actr.get_time(model_time=True) / 1000
     #print(n_trials, total_time)
 
     # calculate metrics
     success_rate = success_trials/n_trials
-    engagement = np.log(n_trials*(total_time-n_trials*2))
+    # deduct time for trial-end decision if response is within time limit,
+    # otherwise cap per-trial time with time limit
+    if on_time: adjust_time = n_trials * (total_time-n_trials*2)
+    else: adjust_time = n_trials * (n_trials*time)
+    engagement = np.log(adjust_time)
     return success_rate, engagement
 
 # runs one game for each combination of size and time
-def run_experiment(n):
+def run_experiment(n, progress=False):
     global ship_sizes, time_limits
     global size_success_results, size_engage_results
     global time_success_results, time_engage_results
     size_success_results, size_engage_results = list(), list()
     time_success_results, time_engage_results = list(), list()
+    actr.hide_output()
 
-    for _ in range(n):
+    for i in range(n):
         # collect per-game success rate and engagement data
         success_results, engage_results = np.zeros((9,8)), np.zeros((9,8))
         for s in range(9):
@@ -186,6 +197,8 @@ def run_experiment(n):
         time_success_results.append(np.mean(success_results, axis=0))
         size_engage_results.append(np.mean(engage_results, axis=1))
         time_engage_results.append(np.mean(engage_results, axis=0))
+
+        if progress and (i+1) % progress == 0: print(i+1, "iterations finished.")
 
     # transform format and display results
     size_success_results = np.array(size_success_results)
@@ -210,8 +223,10 @@ def print_results():
 
     print()
     print("Size Success Results:")
-    actr.correlation(size_success_data, list(size_success_results_mn))
-    actr.mean_deviation(size_success_data, list(size_success_results_mn))
+    cor = actr.correlation(size_success_data, list(size_success_results_mn))
+    dev = actr.mean_deviation(size_success_data, list(size_success_results_mn))
+    print("CORRELATION: {:.3f}".format(cor))
+    print("MEAN DEVIATION: {:.3f}".format(dev))
     print("Original   Current")
     for i in range(9):
         print(" ", end="")
@@ -219,19 +234,11 @@ def print_results():
         print("{:.3f}".format(size_success_results_mn[i]), end="\n")
     print()
 
-    print("Time Success Results:")
-    actr.correlation(time_success_data, list(time_success_results_mn))
-    actr.mean_deviation(time_success_data, list(time_success_results_mn))
-    print("Original   Current")
-    for i in range(8):
-        print(" ", end="")
-        print("{:.3f}".format(time_success_data[i]), end="      ")
-        print("{:.3f}".format(time_success_results_mn[i]), end="\n")
-    print()
-
     print("Size Engage Results:")
-    actr.correlation(size_engage_data, list(size_engage_results_mn))
-    actr.mean_deviation(size_engage_data, list(size_engage_results_mn))
+    cor = actr.correlation(size_engage_data, list(size_engage_results_mn))
+    dev = actr.mean_deviation(size_engage_data, list(size_engage_results_mn))
+    print("CORRELATION: {:.3f}".format(cor))
+    print("MEAN DEVIATION: {:.3f}".format(dev))
     print("Original   Current")
     for i in range(9):
         print(" ", end="")
@@ -239,9 +246,23 @@ def print_results():
         print("{:.3f}".format(size_engage_results_mn[i]), end="\n")
     print()
 
+    print("Time Success Results:")
+    cor = actr.correlation(time_success_data, list(time_success_results_mn))
+    dev = actr.mean_deviation(time_success_data, list(time_success_results_mn))
+    print("CORRELATION: {:.3f}".format(cor))
+    print("MEAN DEVIATION: {:.3f}".format(dev))
+    print("Original   Current")
+    for i in range(8):
+        print(" ", end="")
+        print("{:.3f}".format(time_success_data[i]), end="      ")
+        print("{:.3f}".format(time_success_results_mn[i]), end="\n")
+    print()
+
     print("Time Engage Results:")
-    actr.correlation(time_engage_data, list(time_engage_results_mn))
-    actr.mean_deviation(time_engage_data, list(time_engage_results_mn))
+    cor = actr.correlation(time_engage_data, list(time_engage_results_mn))
+    dev = actr.mean_deviation(time_engage_data, list(time_engage_results_mn))
+    print("CORRELATION: {:.3f}".format(cor))
+    print("MEAN DEVIATION: {:.3f}".format(dev))
     print("Original   Current")
     for i in range(8):
         print(" ", end="")
