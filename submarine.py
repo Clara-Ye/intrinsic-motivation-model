@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 actr.load_act_r_model("ACT-R:project;intrinsic-motivation-model;submarine-model.lisp")
 
-size_success_data = [0.1375, 0.1450, 0.1700,
-                     0.2050, 0.2500, 0.2750,
+size_success_data = [0.1250, 0.1450, 0.1700,
+                     0.2000, 0.2500, 0.2750,
                      0.2975, 0.3375, 0.3825]
 size_engage_data = [5.110, 5.120, 5.170,
                     5.250, 5.325, 5.400,
@@ -64,7 +64,7 @@ def calculate_reward(numer, denom, correct):
 def model(numer, denom, size, time):
     global current_numer, current_fracline, current_denom
     global end_choice, click_loc
-    end_choice = '' 
+    end_choice = ""
     click_loc = -1
     correct = 0
 
@@ -112,7 +112,7 @@ def model(numer, denom, size, time):
         click_loc_trans = 50 + (click_loc-550)/(950-550) * (450-50)
         correct = (left_end <= click_loc_trans) and (click_loc_trans <= right_end)
         actr.trigger_reward(calculate_reward(numer, denom, correct))
-        print(click_loc_trans, x_correct)
+        #print(click_loc_trans, x_correct)
 
         # trial-end choice
         actr.add_command("end-response", respond_to_key_press, 

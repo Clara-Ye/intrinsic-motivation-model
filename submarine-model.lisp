@@ -7,10 +7,10 @@
      :model-warnings nil :style-warnings nil
      :show-focus nil
      :ul t :egs 1 :nu 5 :ult nil
-     :mp 1.0 :rt -0.2 :lf 1.0 :act nil
+     :mp 1.0 :rt -0.2 :le 1.0 :lf 1.0 :act nil
      :epl t :pct nil
      :needs-mouse t :cursor-noise t
-     :default-target-width 40)
+     :default-target-width 80)
 
 (chunk-type play-game state)
 (chunk-type integer string)
@@ -347,15 +347,15 @@
     -imaginal>
   )
 
-(spp attend-numerator :u 20)
-(spp attend-denominator :u 20)
-(spp attend-target :u 20)
-(spp continue-game :u 40)
+(spp attend-numerator :u 100)
+(spp attend-denominator :u 100)
+(spp attend-target :u 100)
+(spp continue-game :u 30)
 (spp end-game :u 0 :fixed-utility t)
 
 (set-base-levels 
-  (one 10)  (two   10) (three 10) (four 10) (five 10)
-  (six 10)  (seven 10) (eight 10) (nine 10) (ten  10))
+  (one 100) (two   100) (three 100) (four 100) (five 100)
+  (six 100) (seven 100) (eight 100) (nine 100) (ten  100))
 
 (set-similarities
   (one   two   -0.1) (two   three -0.1) (three four  -0.1)
