@@ -12,6 +12,7 @@ The function also takes 3 optional arguments:
 * `progress`: if an integer `p`, then the running progress would be printed every `p` iterations. Default is `False`, i.e., no progress is printed.
 * `data`: if `True`, prints the numerical summary of the simulations, including correlation, mean deviation, and side by side comparison of human and model average results. Default is `True`.
 * `plot`: if `True`, plots human and model average results with standard error bars in line graphs.
+
 It is recommended to set at least on of `data` and `plot` to `True`.
 
 There are 2 additional functions that can be used for unit-testing purpose:
