@@ -6,8 +6,8 @@
 (sgp :esc t :v nil :trace-detail low
      :model-warnings nil :style-warnings nil
      :show-focus nil
-     :ul t :egs 1 :nu 5 :ult nil
      :mp 1.0 :rt -0.2 :le 1.0 :lf 1.0 :act nil
+     :ul t :egs 1 :nu 5 :ult nil
      :epl t :pct nil
      :needs-mouse t :cursor-noise t
      :default-target-width 80)
@@ -350,7 +350,7 @@
 (spp attend-numerator :u 100)
 (spp attend-denominator :u 100)
 (spp attend-target :u 100)
-(spp continue-game :u 36)
+(spp continue-game :u 35)
 (spp end-game :u 0 :fixed-utility t)
 
 (set-base-levels 

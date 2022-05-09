@@ -93,8 +93,6 @@ def model(numer, denom, size, time):
         actr.monitor_command("click-mouse", "attack")
         actr.set_buffer_chunk("goal", "first-goal")
         start_time = actr.get_time(model_time=True) / 1000
-        # remove if need to debug:
-        #actr.start_hand_at_mouse()
 
         actr.run(5)
         actr.remove_items_from_exp_window(window,current_numer)
@@ -119,8 +117,6 @@ def model(numer, denom, size, time):
         on_time = (click_time - start_time <= time)
         correct = (on_time) and (left_end <= click_loc_trans) and (click_loc_trans <= right_end)
         actr.trigger_reward(calculate_reward(numer, denom, correct))
-        # remove if need to debug
-        #print(click_loc_trans, x_correct)
 
         # trial-end choice
         actr.add_command("end-response", respond_to_key_press, 
@@ -163,7 +159,6 @@ def run_game(size, time):
         correct, on_time = run_trial(size, time)
         success_trials += correct
     total_time = actr.get_time(model_time=True) / 1000
-    #print(n_trials, total_time)
 
     # calculate metrics
     success_rate = success_trials/n_trials
@@ -175,12 +170,13 @@ def run_game(size, time):
     return success_rate, engagement
 
 # runs one game for each combination of size and time
-def run_experiment(n, progress=False):
+def run_experiment(n, progress=False, data=True, plot=True):
     global ship_sizes, time_limits
     global size_success_results, size_engage_results
     global time_success_results, time_engage_results
     size_success_results, size_engage_results = list(), list()
     time_success_results, time_engage_results = list(), list()
+    # remove if warning messages can be suppressed in the ACT-R terminal:
     actr.hide_output()
 
     for i in range(n):
@@ -205,8 +201,8 @@ def run_experiment(n, progress=False):
     time_success_results = np.array(time_success_results)
     size_engage_results = np.array(size_engage_results)
     time_engage_results = np.array(time_engage_results)
-    print_results()
-    plot_results()
+    if data: print_results()
+    if plot: plot_results()
 
 # prints comparison of numeric results
 def print_results():
@@ -227,7 +223,7 @@ def print_results():
     dev = actr.mean_deviation(size_success_data, list(size_success_results_mn))
     print("CORRELATION: {:.3f}".format(cor))
     print("MEAN DEVIATION: {:.3f}".format(dev))
-    print("Original   Current")
+    print(" Human      Model")
     for i in range(9):
         print(" ", end="")
         print("{:.3f}".format(size_success_data[i]), end="      ")
@@ -239,7 +235,7 @@ def print_results():
     dev = actr.mean_deviation(size_engage_data, list(size_engage_results_mn))
     print("CORRELATION: {:.3f}".format(cor))
     print("MEAN DEVIATION: {:.3f}".format(dev))
-    print("Original   Current")
+    print(" Human      Model")
     for i in range(9):
         print(" ", end="")
         print("{:.3f}".format(size_engage_data[i]), end="      ")
@@ -251,7 +247,7 @@ def print_results():
     dev = actr.mean_deviation(time_success_data, list(time_success_results_mn))
     print("CORRELATION: {:.3f}".format(cor))
     print("MEAN DEVIATION: {:.3f}".format(dev))
-    print("Original   Current")
+    print(" Human      Model")
     for i in range(8):
         print(" ", end="")
         print("{:.3f}".format(time_success_data[i]), end="      ")
@@ -263,7 +259,7 @@ def print_results():
     dev = actr.mean_deviation(time_engage_data, list(time_engage_results_mn))
     print("CORRELATION: {:.3f}".format(cor))
     print("MEAN DEVIATION: {:.3f}".format(dev))
-    print("Original   Current")
+    print(" Human      Model")
     for i in range(8):
         print(" ", end="")
         print("{:.3f}".format(time_engage_data[i]), end="      ")
